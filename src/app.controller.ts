@@ -31,7 +31,7 @@ export class AppController {
   }
 
   @Post('login')
-  async login(@Body() body: any) {
+  async login(@Body() body: { email: string; password: string }) {
     const { email, password } = body;
 
     // DB에서 정보 가져왔다고 가정
