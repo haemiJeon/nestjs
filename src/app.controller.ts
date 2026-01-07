@@ -1,7 +1,16 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller()
 export class AppController {
@@ -58,6 +67,30 @@ export class AppController {
     return {
       message: '로그인 성공',
       access_token: token,
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('profile')
+  async getProfile(
+    @Request() req: { user: { userId: number; email: string } },
+  ) {
+    const userId = req.user.userId;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    return {
+      message: '인증 성공!',
+      user: {
+        email: user.email,
+        id: user.id,
+      },
     };
   }
 }
