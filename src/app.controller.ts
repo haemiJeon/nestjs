@@ -11,6 +11,11 @@ import { PrismaService } from './prisma/prisma.service';
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
+import type { RequestWithUser } from './auth/interfaces/request-with-user.interface';
+
+import { CreateUserDto } from './auth/dto/create-user.dto';
+
+import { LoginDto } from './auth/dto/login.dto';
 
 @Controller()
 export class AppController {
@@ -20,7 +25,7 @@ export class AppController {
   ) {}
 
   @Post('signup')
-  async signUp(@Body() body: { email: string; password: string }) {
+  async signUp(@Body() body: CreateUserDto) {
     const { email, password } = body;
 
     const existingUser = await this.prisma.user.findUnique({
@@ -44,7 +49,7 @@ export class AppController {
   }
 
   @Post('login')
-  async login(@Body() body: { email: string; password: string }) {
+  async login(@Body() body: LoginDto) {
     const { email, password } = body;
 
     const user = await this.prisma.user.findUnique({
@@ -72,9 +77,7 @@ export class AppController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
-  async getProfile(
-    @Request() req: { user: { userId: number; email: string } },
-  ) {
+  async getProfile(@Request() req: RequestWithUser) {
     const userId = req.user.userId;
 
     const user = await this.prisma.user.findUnique({
