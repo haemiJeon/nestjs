@@ -6,11 +6,13 @@ import {
   Request,
   UseGuards,
   NotFoundException,
+  Patch,
 } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDto } from './auth/dto/change-password.dto';
 import type { RequestWithUser } from './auth/interfaces/request-with-user.interface';
 
 import { CreateUserDto } from './auth/dto/create-user.dto';
@@ -95,5 +97,37 @@ export class AppController {
         id: user.id,
       },
     };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('change-password')
+  async changePassword(
+    @Request() req: RequestWithUser,
+    @Body() body: ChangePasswordDto,
+  ) {
+    const { currentPassword, newPassword } = body;
+    const userId = req.user.userId;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return { statusCode: 400, message: '현재 비밀번호가 일치하지 않습니다.' };
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { message: '비밀번호가 성공적으로 변경되었습니다.' };
   }
 }
