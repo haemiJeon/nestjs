@@ -36,11 +36,7 @@ export class AppController {
     });
 
     if (existingUser) {
-      return {
-        statusCode: 400,
-        message: '이미 존재하는 이메일입니다.',
-        error: 'Bad Request',
-      };
+      throw new BadRequestException('이미 존재하는 이메일입니다.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
