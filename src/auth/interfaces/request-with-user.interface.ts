@@ -1,6 +1,6 @@
 export interface RequestWithUser {
   user: {
-    userId: number;
+    userId: string;
     email: string;
   };
 }
